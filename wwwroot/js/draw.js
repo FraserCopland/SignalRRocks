@@ -1,9 +1,10 @@
 "use strict";
 
 var connection = new signalR.HubConnectionBuilder().withUrl("/drawDotHub").build();
+var colour;
 
-connection.on("updateDot", function (x, y) {
-    drawDot(x, y, 8);
+connection.on("updateDot", function (x, y, colour) {
+    drawDot(x, y, 8, colour);
 });
 
 connection.on("clearCanvas", function () {
@@ -11,7 +12,8 @@ connection.on("clearCanvas", function () {
 });
 
 connection.start().then(function () {
-    // nothing here
+    // set colour to random colour
+    colour = "#" + Math.floor(Math.random() * 16777215).toString(16);
 }).catch(function (err) {
     return console.error(err.toString());
 });
@@ -28,14 +30,9 @@ var canvas, ctx;
 var mouseX, mouseY, mouseDown = 0;
 // Draws a dot at a specific position on the supplied canvas name
 // Parameters are: A canvas context, the x position, the y position, the size of the dot
-function drawDot(x, y, size) {
-    // Let's use black by setting RGB values to 0, and 255 alpha (completely opaque)
-    var r = 0;
-    var g = 0;
-    var b = 0;
-    var a = 255;
+function drawDot(x, y, size, colour) {
     // Select a fill style
-    ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + (a / 255) + ")";
+    ctx.fillStyle = colour;
     // Draw a filled circle
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2, true);
@@ -46,9 +43,9 @@ function drawDot(x, y, size) {
 // Keep track of the mouse button being pressed and draw a dot at current location
 function sketchpad_mouseDown() {
     mouseDown = 1;
-    drawDot(mouseX, mouseY, 8);
+    drawDot(mouseX, mouseY, 8, colour);
 
-    connection.invoke("UpdateCanvas", mouseX, mouseY).catch(function (err) {
+    connection.invoke("UpdateCanvas", mouseX, mouseY, colour).catch(function (err) {
         return console.error(err.toString());
     });
 }
@@ -64,8 +61,8 @@ function sketchpad_mouseMove(e) {
     getMousePos(e);
     // Draw a dot if the mouse button is currently being pressed
     if (mouseDown == 1) {
-        drawDot(mouseX, mouseY, 8);
-        connection.invoke("UpdateCanvas", mouseX, mouseY).catch(function (err) {
+        drawDot(mouseX, mouseY, 8, colour);
+        connection.invoke("UpdateCanvas", mouseX, mouseY, colour).catch(function (err) {
             return console.error(err.toString());
         });
     }
